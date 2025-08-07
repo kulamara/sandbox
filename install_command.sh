@@ -8,7 +8,7 @@
 
 # Check if the required number of arguments (token and script name) are provided.
 if [ "$#" -ne 2 ]; then
-  echo "❌ Error: Invalid number of arguments." >&2
+  echo "? Error: Invalid number of arguments." >&2
   echo "   Usage: install_command <auth_token> <script_filename>" >&2
   exit 1
 fi
@@ -24,7 +24,7 @@ DEST_PATH="/usr/local/bin/${SCRIPT_FILENAME}"
 
 # Check if the secret token is configured in the container's environment.
 if [ -z "$INSTALL_TOKEN" ]; then
-  echo "❌ Security Alert: The INSTALL_TOKEN is not set in the environment." >&2
+  echo "? Security Alert: The INSTALL_TOKEN is not set in the environment." >&2
   echo "   Installation is disabled until the administrator configures it." >&2
   exit 1
 fi
@@ -33,28 +33,28 @@ fi
 
 # Compare the provided token with the secret token from the environment variable.
 if [ "$AUTH_TOKEN" != "$INSTALL_TOKEN" ]; then
-  echo "❌ Error: Invalid authentication token. Permission denied." >&2
+  echo "? Error: Invalid authentication token. Permission denied." >&2
   exit 1
 fi
 
-echo "✅ Authentication successful."
+echo "? Authentication successful."
 
 # --- File and Installation Logic ---
 
 # Check if the script to be installed actually exists in the inbox.
 if [ ! -f "$SOURCE_PATH" ]; then
-  echo "❌ Error: The script '$SCRIPT_FILENAME' was not found in /inbox." >&2
+  echo "? Error: The script '$SCRIPT_FILENAME' was not found in /inbox." >&2
   exit 1
 fi
 
-echo "🚀 Installing command '$SCRIPT_FILENAME'..."
+echo "? Installing command '$SCRIPT_FILENAME'..."
 
 # Move the script to the system's binary path.
 # Using `mv` ensures the script is removed from the inbox after installation.
 mv "$SOURCE_PATH" "$DEST_PATH"
 
 if [ $? -ne 0 ]; then
-    echo "❌ Error: Failed to move the script to the destination." >&2
+    echo "? Error: Failed to move the script to the destination." >&2
     exit 1
 fi
 
@@ -62,9 +62,9 @@ fi
 chmod +x "$DEST_PATH"
 
 if [ $? -eq 0 ]; then
-  echo "✅ Success: Command '$SCRIPT_FILENAME' has been installed to $DEST_PATH and is now executable."
+  echo "? Success: Command '$SCRIPT_FILENAME' has been installed to $DEST_PATH and is now executable."
 else
-    echo "❌ Error: Failed to make the script executable. Check permissions." >&2
+    echo "? Error: Failed to make the script executable. Check permissions." >&2
     # Attempt to clean up by removing the moved file if chmod fails.
     rm "$DEST_PATH" 2>/dev/null
     exit 1

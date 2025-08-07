@@ -10,11 +10,11 @@ CONTAINER_NAME=${1:-"secure-sandbox"}
 # Export the variable so it can be accessed in docker-compose.yml
 export CONTAINER_NAME
 
-echo "🚀 Starting deployment of container: $CONTAINER_NAME"
+echo "? Starting deployment of container: $CONTAINER_NAME"
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
-  echo "❌ Docker does not seem to be running. Please start Docker and try again."
+  echo "? Docker does not seem to be running. Please start Docker and try again."
   exit 1
 fi
 
@@ -25,9 +25,9 @@ docker-compose up --build -d
 
 # Check the exit code of the docker-compose command
 if [ $? -eq 0 ]; then
-  echo "✅ Sandbox container '$CONTAINER_NAME' deployed successfully."
-  echo "👉 To access the sandbox, run: docker exec -it $CONTAINER_NAME /bin/sh"
+  echo "? Sandbox container '$CONTAINER_NAME' deployed successfully."
+  echo "? To access the sandbox, run: docker exec -it $CONTAINER_NAME /bin/sh"
 else
-  echo "❌ Deployment failed. Check the output from Docker Compose for errors."
+  echo "? Deployment failed. Check the output from Docker Compose for errors."
   exit 1
 fi

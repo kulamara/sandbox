@@ -7,7 +7,7 @@
 # --- Configuration Validation ---
 # Check that all required environment variables are set.
 if [ -z "$REMOTE_USER" ] || [ -z "$REMOTE_HOST" ] || [ -z "$REMOTE_DATA_PATH" ] || [ -z "$REMOTE_KEY_PATH" ]; then
-  echo "❌ Error: Missing one or more required environment variables." >&2
+  echo "? Error: Missing one or more required environment variables." >&2
   echo "   Please ensure the following are set: REMOTE_USER, REMOTE_HOST, REMOTE_DATA_PATH, REMOTE_KEY_PATH" >&2
   exit 1
 fi
@@ -15,11 +15,11 @@ fi
 # Check if the specified private key file actually exists inside the container.
 # The administrator is responsible for mounting this key securely.
 if [ ! -f "$REMOTE_KEY_PATH" ]; then
-  echo "❌ Error: SSH private key not found at the specified path: $REMOTE_KEY_PATH" >&2
+  echo "? Error: SSH private key not found at the specified path: $REMOTE_KEY_PATH" >&2
   exit 1
 fi
 
-echo "🔒 Preparing to fetch data..."
+echo "? Preparing to fetch data..."
 echo "   - Remote User: $REMOTE_USER"
 echo "   - Remote Host: $REMOTE_HOST"
 echo "   - Remote Path: $REMOTE_DATA_PATH"
@@ -41,10 +41,10 @@ scp -r -i "$REMOTE_KEY_PATH" \
 # --- Verification ---
 # Check the exit code of the scp command to determine success or failure.
 if [ $? -eq 0 ]; then
-  echo "✅ Success: Data has been securely fetched and is now available in the /data directory."
+  echo "? Success: Data has been securely fetched and is now available in the /data directory."
   echo "   Contents of /data:"
   ls -l /data
 else
-  echo "❌ Error: Data fetch failed. Please check your connection details, network access from the host, and remote server permissions." >&2
+  echo "? Error: Data fetch failed. Please check your connection details, network access from the host, and remote server permissions." >&2
   exit 1
 fi
