@@ -30,6 +30,9 @@ services:
       - ./data:/data
       # The ./command_inbox directory is for securely adding new tools.
       - ./command_inbox:/inbox
+      # DEMO: Mount a dummy key to make the fetch_data command runnable for demonstration.
+      # In a real scenario, replace './dummy_key' with the actual path to the private key.
+      - ./dummy_key:${REMOTE_KEY_PATH:-/root/.ssh/id_rsa_remote}
 
     # Attach the service to our custom, isolated network.
     networks:
