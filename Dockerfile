@@ -76,6 +76,8 @@ USER appuser
 # Set the working directory for the user.
 WORKDIR /data
 
-# Default command to start a shell when the container is run.
-# The user will have a very limited environment.
-CMD ["/bin/sh"]
+# Use tail -f /dev/null to keep the container running indefinitely.
+# This allows the administrator to exec into it for management, and for
+# the analyst to use it as a persistent sandbox. The default sh command
+# would otherwise exit immediately as it has no input.
+CMD ["tail", "-f", "/dev/null"]
