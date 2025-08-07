@@ -1,0 +1,45 @@
+version: '3.8'
+
+# docker-compose.yml: Defines the secure sandbox environment.
+# It sets up the main service, an isolated network, and required volumes.
+
+services:
+  sandbox:
+    # Build the Docker image from the Dockerfile in the current directory.
+    build: .
+    # Set the container name from the variable exported by deploy.sh.
+    container_name: ${CONTAINER_NAME:-secure-sandbox}
+
+    # Define environment variables needed by the scripts inside the container.
+    # IMPORTANT: These are placeholder values. The administrator should
+    # replace them with actual secrets, possibly using a .env file or a
+    # more secure secret management system in a production environment.
+    environment:
+      # Token for the install_command.sh script.
+      - INSTALL_TOKEN=replace-with-your-actual-secure-token
+      # Connection details for the fetch_data.sh script.
+      - REMOTE_USER=analyst
+      - REMOTE_HOST=dataserver.example.com
+      - REMOTE_KEY_PATH=/root/.ssh/id_rsa_remote # This is the path to the private key *inside* the container.
+      - REMOTE_DATA_PATH=/srv/sensitive-data/
+
+    # Map local directories to container volumes.
+    volumes:
+      # The ./data directory on the host is mapped to /data inside the container.
+      # This is where analysts place data for processing.
+      - ./data:/data
+      # The ./command_inbox directory is for securely adding new tools.
+      - ./command_inbox:/inbox
+
+    # Attach the service to our custom, isolated network.
+    networks:
+      - sandbox-net
+
+# Define the custom network.
+networks:
+  sandbox-net:
+    driver: bridge
+    # The 'internal: true' flag is the most critical security feature here.
+    # It creates a network that is completely isolated from the host's
+    # network interface, preventing any inbound or outbound traffic.
+    internal: true
