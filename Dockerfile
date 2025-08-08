@@ -39,6 +39,13 @@ RUN pip install --no-cache-dir regex
 # ==============================================================================
 FROM debian:stable-slim
 
+# Install minimal Python runtime (without pip and dev tools)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Remove package management tools for security
+    rm -f /usr/bin/apt* /usr/bin/dpkg*
+
 # Create a non-root user and group for security.
 RUN groupadd -r appgroup && \
     useradd -r -s /bin/sh -g appgroup appuser
@@ -63,9 +70,11 @@ RUN chmod +x /usr/local/bin/fetch_data && \
 
 # Create the /data and /inbox directories and set ownership.
 # The user 'appuser' needs to be able to write to the /data directory.
+# Also give appuser write access to /usr/local/bin for install_command functionality
 RUN mkdir -p /data /inbox && \
     chown -R appuser:appgroup /data && \
-    chown -R appuser:appgroup /inbox
+    chown -R appuser:appgroup /inbox && \
+    chown -R appuser:appgroup /usr/local/bin
 
 # Set the PATH to include the Python virtual environment.
 ENV PATH="/opt/venv/bin:$PATH"

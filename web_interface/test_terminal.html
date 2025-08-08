@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>终端测试页面</title>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .terminal-container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Xterm.js 测试页面</h1>
+        
+        <div id="status" class="status">正在检查终端库...</div>
+        
+        <button id="test-btn" class="btn-primary" onclick="testTerminal()">测试终端</button>
+        <button id="clear-btn" class="btn-success" onclick="clearTerminal()">清空终端</button>
+        
+        <div class="terminal-container">
+            <div id="terminal"></div>
+        </div>
+    </div>
+
+    <script>
+        let terminal = null;
+        
+        // 页面加载完成后检查
+        document.addEventListener('DOMContentLoaded', function() {
+            checkTerminalLibrary();
+        });
+        
+        function checkTerminalLibrary() {
+            const statusDiv = document.getElementById('status');
+            
+            if (typeof Terminal !== 'undefined') {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ Xterm.js 库加载成功！版本: ' + (Terminal.version || '未知');
+                document.getElementById('test-btn').disabled = false;
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Xterm.js 库加载失败！请检查网络连接。';
+                document.getElementById('test-btn').disabled = true;
+            }
+        }
+        
+        function testTerminal() {
+            try {
+                if (terminal) {
+                    terminal.dispose();
+                }
+                
+                // 创建终端实例
+                terminal = new Terminal({
+                    cursorBlink: true,
+                    fontSize: 14,
+                    fontFamily: 'Courier New, monospace',
+                    theme: {
+                        background: '#1e1e1e',
+                        foreground: '#ffffff',
+                        cursor: '#ffffff',
+                        selection: '#ffffff40'
+                    },
+                    allowTransparency: true,
+                    convertEol: true
+                });
+                
+                // 挂载到DOM
+                const terminalElement = document.getElementById('terminal');
+                terminalElement.innerHTML = '';
+                terminal.open(terminalElement);
+                
+                // 写入测试内容
+                terminal.writeln('🎉 终端测试成功！');
+                terminal.writeln('📝 这是一个测试终端');
+                terminal.writeln('⌨️  请尝试输入一些内容...');
+                terminal.write('$ ');
+                
+                // 处理用户输入
+                terminal.onData(function(data) {
+                    // 简单的回显功能
+                    if (data === '\r') {
+                        terminal.write('\r\n$ ');
+                    } else if (data === '\u007F') {
+                        // 退格键
+                        terminal.write('\b \b');
+                    } else {
+                        terminal.write(data);
+                    }
+                });
+                
+                document.getElementById('status').innerHTML = '✅ 终端创建成功！可以尝试输入内容。';
+                document.getElementById('status').className = 'status success';
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ 终端创建失败: ' + error.message;
+                document.getElementById('status').className = 'status error';
+                console.error('终端创建失败:', error);
+            }
+        }
+        
+        function clearTerminal() {
+            if (terminal) {
+                terminal.clear();
+                terminal.write('$ ');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -49,12 +49,12 @@ fi
 
 echo "? Installing command '$SCRIPT_FILENAME'..."
 
-# Move the script to the system's binary path.
-# Using `mv` ensures the script is removed from the inbox after installation.
-mv "$SOURCE_PATH" "$DEST_PATH"
+# Copy the script to the system's binary path.
+# Using `cp` keeps the original script in the inbox for repeated demonstrations.
+cp "$SOURCE_PATH" "$DEST_PATH"
 
 if [ $? -ne 0 ]; then
-    echo "? Error: Failed to move the script to the destination." >&2
+    echo "? Error: Failed to copy the script to the destination." >&2
     exit 1
 fi
 
