@@ -111,6 +111,11 @@ def index():
     """主页"""
     return render_template('index.html')
 
+@app.route('/record_registration')
+def record_registration():
+    """备案登记页面"""
+    return render_template('record_registration.html')
+
 @app.route('/api/container/status')
 def container_status():
     """获取容器状态API"""
