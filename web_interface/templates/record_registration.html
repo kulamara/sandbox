@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接入主体备案 - 备案信息管理</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container-fluid {
+            padding: 20px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .breadcrumb-item a {
+            color: #6c757d;
+            text-decoration: none;
+        }
+        .breadcrumb-item.active {
+            color: #495057;
+            font-weight: 600;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            margin-bottom: 1rem;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .filter-section .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Table */
+        .table-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+        }
+        .table tbody td {
+            vertical-align: middle;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.35em 0.65em;
+            border-radius: 1rem;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-draft { background-color: #e9ecef; color: #495057; }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-passed { background-color: #d1e7dd; color: #0f5132; }
+        .status-rejected { background-color: #f8d7da; color: #842029; }
+
+        /* Role Tags */
+        .role-tag {
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        /* Modal Customization */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+        .form-section-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Locked field icon */
+        .locked-field {
+            position: relative;
+        }
+        .locked-field::after {
+            content: '\f023'; /* FontAwesome lock icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+        }
+        .form-control:read-only {
+            background-color: #e9ecef;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1060;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">备案信息管理</li>
+            <li class="breadcrumb-item">备案登记</li>
+            <li class="breadcrumb-item">主体与基础设施</li>
+            <li class="breadcrumb-item active" aria-current="page">接入主体备案</li>
+        </ol>
+    </nav>
+
+    <!-- Toolbar -->
+    <div class="toolbar d-flex justify-content-between align-items-center">
+        <div>
+            <button class="btn btn-primary me-2" onclick="openOneClickModal()">
+                <i class="fas fa-bolt"></i> 一键备案
+            </button>
+            <button class="btn btn-outline-primary me-2" onclick="openRegisterModal()">
+                <i class="fas fa-pen"></i> 登记备案
+            </button>
+        </div>
+        <button class="btn btn-outline-secondary">
+            <i class="fas fa-file-export"></i> 导出Excel
+        </button>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form class="row g-3 align-items-end" onsubmit="event.preventDefault(); filterMainTable();">
+            <div class="col-md-3">
+                <label class="form-label">主体名称</label>
+                <input type="text" class="form-control" id="filterName" placeholder="模糊匹配">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">统一社会信用代码</label>
+                <input type="text" class="form-control" id="filterCode" placeholder="精确匹配">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">备案状态</label>
+                <select class="form-select" id="filterStatus">
+                    <option value="">全部</option>
+                    <option value="draft">草稿</option>
+                    <option value="pending">待审核</option>
+                    <option value="passed">已通过</option>
+                    <option value="rejected">已驳回</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search"></i> 查询</button>
+                <button type="button" class="btn btn-light" onclick="resetFilters()"><i class="fas fa-redo"></i> 重置</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Main Table -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>主体名称</th>
+                        <th>信用代码</th>
+                        <th>主体角色</th>
+                        <th>主体类型</th>
+                        <th>所属地市</th>
+                        <th>备案状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="mainTableBody">
+                    <!-- Data populated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-container">
+            <div class="text-muted small">
+                每页
+                <select class="form-select form-select-sm d-inline-block w-auto" id="pageSize" onchange="renderMainTable()">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                条，共 <span id="totalRecords">0</span> 条记录
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- One-click Registration Modal -->
+<div class="modal fade" id="oneClickModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">一键备案 - 接入主体</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">以下为来源方已同步但尚未备案的接入主体数据：</p>
+
+                <!-- One-click Filter -->
+                <div class="row g-2 mb-3 align-items-center">
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="selectAllSync" onchange="toggleSelectAllSync()">
+                            <label class="form-check-label" for="selectAllSync">全选</label>
+                        </div>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <input type="text" class="form-control form-control-sm" placeholder="主体名称" id="syncFilterName">
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" id="syncFilterRole">
+                            <option value="">全部角色</option>
+                            <option value="运营机构">运营机构</option>
+                            <option value="数商">数商</option>
+                            <option value="数据提供方">数据提供方</option>
+                            <option value="数据使用方">数据使用方</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-sm btn-outline-primary" onclick="filterSyncTable()">筛选</button>
+                    </div>
+                </div>
+
+                <!-- One-click Table -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>主体名称</th>
+                                <th>信用代码</th>
+                                <th>主体角色</th>
+                                <th>主体类型</th>
+                                <th>同步时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="syncTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="text-muted small">
+                    已选择 <span id="selectedCount" class="fw-bold text-primary">0</span> 条记录
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="submitOneClick()">提交备案审核 (<span id="submitCount">0</span>)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Register/Modify Modal -->
+<div class="modal fade" id="registerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registerModalTitle">登记备案 - 接入主体</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <input type="hidden" name="id">
+                    <!-- Basic Info -->
+                    <div class="form-section-title">▼ 基本信息</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">主体名称 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="name" required>
+                                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">信用代码 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="code" required>
+                                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">主体类型 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select class="form-select" name="type" required>
+                                    <option value="企业法人">企业法人</option>
+                                    <option value="机关法人">机关法人</option>
+                                    <option value="社团法人">社团法人</option>
+                                </select>
+                                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">主体角色 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select class="form-select" name="role" required>
+                                    <option value="运营机构">运营机构</option>
+                                    <option value="数商">数商</option>
+                                    <option value="数据提供方">数据提供方</option>
+                                    <option value="数据使用方">数据使用方</option>
+                                </select>
+                                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">所属地市 <span class="text-danger">*</span></label>
+                            <select class="form-select" name="city" required>
+                                <option value="南昌市" selected>南昌市</option>
+                                <option value="九江市">九江市</option>
+                                <option value="赣州市">赣州市</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">行业类型 <span class="text-danger">*</span></label>
+                            <select class="form-select" name="industry" required>
+                                <option value="金融业">金融业</option>
+                                <option value="制造业">制造业</option>
+                                <option value="信息技术">信息技术</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">注册地址</label>
+                            <input type="text" class="form-control" name="address" placeholder="江西省南昌市...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">注册资本</label>
+                            <input type="text" class="form-control" name="capital">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">注册日期</label>
+                            <input type="date" class="form-control" name="registerDate">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">经营期限</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" name="termStart">
+                                <span class="input-group-text">至</span>
+                                <input type="date" class="form-control" name="termEnd">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">经营范围</label>
+                            <textarea class="form-control" name="scope" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Legal Representative Info -->
+                    <div class="form-section-title">▼ 法定代表人信息</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">姓名 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="legalName" required>
+                                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">证件号 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="legalId" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">手机号 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="legalPhone" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">邮箱</label>
+                            <input type="email" class="form-control" name="legalEmail">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">身份证正面</label>
+                            <input type="file" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">身份证反面</label>
+                            <input type="file" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Qualification Proof -->
+                    <div class="form-section-title">▼ 资质证明</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">营业执照 <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">安全认证证书</label>
+                            <input type="file" class="form-control">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-outline-primary" onclick="saveDraft()">保存草稿</button>
+                <button type="button" class="btn btn-primary" onclick="submitRegisterForm()">提交审核</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+
+<!-- JavaScript Logic -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Mock Data
+    let mainData = [
+        { id: 1, name: "XX公司", code: "91360100XX", role: "运营机构", type: "企业法人", city: "南昌市", status: "draft", createTime: "2026-02-04 10:00" },
+        { id: 2, name: "YY企业", code: "91360200XX", role: "数商", type: "企业法人", city: "九江市", status: "pending", createTime: "2026-02-04 09:30" },
+        { id: 3, name: "ZZ科技", code: "91360300XX", role: "运营机构", type: "企业法人", city: "赣州市", status: "passed", createTime: "2026-01-20 14:20" },
+        { id: 4, name: "WW数据", code: "91360400XX", role: "数据提供方", type: "企业法人", city: "南昌市", status: "rejected", createTime: "2026-01-15 11:00" }
+    ];
+
+    let syncData = [
+        { id: 101, name: "AA有限公司", code: "91360100AA", role: "运营机构", type: "企业法人", syncTime: "2026-02-01" },
+        { id: 102, name: "BB科技", code: "91360200BB", role: "数商", type: "企业法人", syncTime: "2026-02-01" },
+        { id: 103, name: "CC数据", code: "91360300CC", role: "数据提供方", type: "企业法人", syncTime: "2026-01-30" }
+    ];
+
+    let selectedSyncIds = [];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        renderMainTable();
+        updateTotalRecords();
+    });
+
+    // --- Main Table Functions ---
+
+    function renderMainTable() {
+        const tbody = document.getElementById('mainTableBody');
+        tbody.innerHTML = '';
+
+        // Simple client-side filter logic
+        const filterName = document.getElementById('filterName').value.toLowerCase();
+        const filterCode = document.getElementById('filterCode').value;
+        const filterStatus = document.getElementById('filterStatus').value;
+
+        const filteredData = mainData.filter(item => {
+            return (!filterName || item.name.toLowerCase().includes(filterName)) &&
+                   (!filterCode || item.code === filterCode) &&
+                   (!filterStatus || item.status === filterStatus);
+        });
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">暂无数据</td></tr>';
+            document.getElementById('totalRecords').textContent = 0;
+            return;
+        }
+
+        filteredData.forEach(item => {
+            const tr = document.createElement('tr');
+
+            // Safe cell creation
+            const tdName = document.createElement('td');
+            tdName.textContent = item.name;
+            tr.appendChild(tdName);
+
+            const tdCode = document.createElement('td');
+            tdCode.textContent = item.code;
+            tr.appendChild(tdCode);
+
+            const tdRole = document.createElement('td');
+            const spanRole = document.createElement('span');
+            spanRole.className = 'role-tag';
+            spanRole.textContent = item.role;
+            tdRole.appendChild(spanRole);
+            tr.appendChild(tdRole);
+
+            const tdType = document.createElement('td');
+            tdType.textContent = item.type;
+            tr.appendChild(tdType);
+
+            const tdCity = document.createElement('td');
+            tdCity.textContent = item.city;
+            tr.appendChild(tdCity);
+
+            const tdStatus = document.createElement('td');
+            tdStatus.innerHTML = getStatusBadge(item.status); // Badge HTML is safe (controlled strings)
+            tr.appendChild(tdStatus);
+
+            const tdTime = document.createElement('td');
+            tdTime.textContent = item.createTime;
+            tr.appendChild(tdTime);
+
+            const tdAction = document.createElement('td');
+            tdAction.innerHTML = getActionButtons(item); // Actions are safe (controlled IDs)
+            tr.appendChild(tdAction);
+
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('totalRecords').textContent = filteredData.length;
+    }
+
+    function getStatusBadge(status) {
+        const config = {
+            'draft': { class: 'status-draft', text: '⚪ 草稿' },
+            'pending': { class: 'status-pending', text: '🟡 待审核' },
+            'passed': { class: 'status-passed', text: '🟢 已通过' },
+            'rejected': { class: 'status-rejected', text: '🔴 已驳回' }
+        };
+        const conf = config[status] || { class: 'status-draft', text: status };
+        return `<span class="status-badge ${conf.class}">${conf.text}</span>`;
+    }
+
+    function getActionButtons(item) {
+        let buttons = '';
+        if (item.status === 'draft') {
+            buttons += `<a href="#" onclick="openModifyModal(${item.id})" class="text-primary me-2 text-decoration-none">修改</a>`;
+            buttons += `<a href="#" onclick="deleteRecord(${item.id})" class="text-danger me-2 text-decoration-none">删除</a>`;
+            buttons += `<a href="#" onclick="submitRecord(${item.id})" class="text-success text-decoration-none">提交审核</a>`;
+        } else if (item.status === 'pending' || item.status === 'passed') {
+            buttons += `<a href="#" onclick="viewRecord(${item.id})" class="text-primary text-decoration-none">查看</a>`;
+        } else if (item.status === 'rejected') {
+            buttons += `<a href="#" onclick="openModifyModal(${item.id})" class="text-primary me-2 text-decoration-none">修改</a>`;
+            buttons += `<a href="#" onclick="submitRecord(${item.id})" class="text-success text-decoration-none">提交审核</a>`;
+        }
+        return buttons;
+    }
+
+    function filterMainTable() {
+        renderMainTable();
+    }
+
+    function resetFilters() {
+        document.getElementById('filterName').value = '';
+        document.getElementById('filterCode').value = '';
+        document.getElementById('filterStatus').value = '';
+        renderMainTable();
+    }
+
+    function updateTotalRecords() {
+        // Updated in renderMainTable
+    }
+
+    // --- One-click Modal Functions ---
+
+    function openOneClickModal() {
+        selectedSyncIds = [];
+        updateSyncSelectionUI();
+        renderSyncTable();
+        new bootstrap.Modal(document.getElementById('oneClickModal')).show();
+    }
+
+    function renderSyncTable() {
+        const tbody = document.getElementById('syncTableBody');
+        tbody.innerHTML = '';
+
+        // Filter logic for sync table
+        const filterName = document.getElementById('syncFilterName').value.toLowerCase();
+        const filterRole = document.getElementById('syncFilterRole').value;
+
+        const filteredSyncData = syncData.filter(item => {
+             return (!filterName || item.name.toLowerCase().includes(filterName)) &&
+                    (!filterRole || item.role === filterRole);
+        });
+
+        if (filteredSyncData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">暂无待备案的同步数据</td></tr>';
+            return;
+        }
+
+        filteredSyncData.forEach(item => {
+            const tr = document.createElement('tr');
+            const isSelected = selectedSyncIds.includes(item.id);
+
+            const tdCheck = document.createElement('td');
+            tdCheck.innerHTML = `<input class="form-check-input sync-checkbox" type="checkbox" value="${item.id}" ${isSelected ? 'checked' : ''} onchange="toggleSyncSelection(${item.id})">`;
+            tr.appendChild(tdCheck);
+
+            const tdName = document.createElement('td');
+            tdName.textContent = item.name;
+            tr.appendChild(tdName);
+
+            const tdCode = document.createElement('td');
+            tdCode.textContent = item.code;
+            tr.appendChild(tdCode);
+
+            const tdRole = document.createElement('td');
+            tdRole.textContent = item.role;
+            tr.appendChild(tdRole);
+
+            const tdType = document.createElement('td');
+            tdType.textContent = item.type;
+            tr.appendChild(tdType);
+
+            const tdTime = document.createElement('td');
+            tdTime.textContent = item.syncTime;
+            tr.appendChild(tdTime);
+
+            tbody.appendChild(tr);
+        });
+
+        // Update "Select All" checkbox state
+        const checkboxes = document.querySelectorAll('.sync-checkbox');
+        const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+        document.getElementById('selectAllSync').checked = allChecked;
+    }
+
+    function toggleSelectAllSync() {
+        const selectAll = document.getElementById('selectAllSync').checked;
+        const checkboxes = document.querySelectorAll('.sync-checkbox');
+
+        checkboxes.forEach(cb => {
+            const id = parseInt(cb.value);
+            cb.checked = selectAll;
+            if (selectAll) {
+                if (!selectedSyncIds.includes(id)) selectedSyncIds.push(id);
+            } else {
+                selectedSyncIds = selectedSyncIds.filter(sid => sid !== id);
+            }
+        });
+        updateSyncSelectionUI();
+    }
+
+    function toggleSyncSelection(id) {
+        if (selectedSyncIds.includes(id)) {
+            selectedSyncIds = selectedSyncIds.filter(sid => sid !== id);
+        } else {
+            selectedSyncIds.push(id);
+        }
+        updateSyncSelectionUI();
+
+        // Check "Select All" status
+        const checkboxes = document.querySelectorAll('.sync-checkbox');
+        const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+        document.getElementById('selectAllSync').checked = allChecked;
+    }
+
+    function updateSyncSelectionUI() {
+        document.getElementById('selectedCount').textContent = selectedSyncIds.length;
+        document.getElementById('submitCount').textContent = selectedSyncIds.length;
+    }
+
+    function filterSyncTable() {
+        renderSyncTable();
+    }
+
+    function submitOneClick() {
+        if (selectedSyncIds.length === 0) {
+            showToast('请至少选择一条记录', 'warning');
+            return;
+        }
+
+        // Mock submission
+        selectedSyncIds.forEach(id => {
+            const item = syncData.find(d => d.id === id);
+            if (item) {
+                // Remove from sync list
+                syncData = syncData.filter(d => d.id !== id);
+                // Add to main list as Pending
+                mainData.unshift({
+                    id: Date.now() + Math.random(), // generate random id
+                    name: item.name,
+                    code: item.code,
+                    role: item.role,
+                    type: item.type,
+                    city: '南昌市', // default
+                    status: 'pending',
+                    createTime: new Date().toISOString().slice(0, 16).replace('T', ' ')
+                });
+            }
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('oneClickModal')).hide();
+        showToast(`已成功提交 ${selectedSyncIds.length} 条备案`, 'success');
+        renderMainTable();
+    }
+
+    // --- Register/Modify Modal Functions ---
+
+    // Helper to reset modal state
+    function resetRegisterModal(isViewMode = false) {
+        const form = document.getElementById('registerForm');
+        form.reset();
+
+        // Enable/Disable inputs
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.disabled = isViewMode;
+        });
+
+        // Show/Hide footer buttons
+        const footerBtns = document.querySelectorAll('#registerModal .modal-footer button:not([data-bs-dismiss="modal"])');
+        footerBtns.forEach(btn => {
+            btn.style.display = isViewMode ? 'none' : 'inline-block';
+        });
+    }
+
+    function openRegisterModal() {
+        resetRegisterModal(false);
+        document.getElementById('registerModalTitle').textContent = '登记备案 - 接入主体';
+        new bootstrap.Modal(document.getElementById('registerModal')).show();
+    }
+
+    function openModifyModal(id) {
+        const item = mainData.find(d => d.id === id);
+        if (!item) return;
+
+        resetRegisterModal(false);
+        document.getElementById('registerModalTitle').textContent = '修改接入主体备案';
+        fillFormWithData(item);
+
+        new bootstrap.Modal(document.getElementById('registerModal')).show();
+    }
+
+    function viewRecord(id) {
+        const item = mainData.find(d => d.id === id);
+        if (!item) return;
+
+        resetRegisterModal(true); // Set to view mode
+        document.getElementById('registerModalTitle').textContent = '查看接入主体备案';
+        fillFormWithData(item);
+
+        new bootstrap.Modal(document.getElementById('registerModal')).show();
+    }
+
+    function fillFormWithData(item) {
+        const form = document.getElementById('registerForm');
+        form.id.value = item.id;
+        form.name.value = item.name || '';
+        form.code.value = item.code || '';
+        form.role.value = item.role || '运营机构';
+        form.type.value = item.type || '企业法人';
+        form.city.value = item.city || '南昌市';
+
+        // Mock data for other fields
+        form.legalName.value = "张三";
+        form.legalId.value = "36010019900101XXXX";
+        form.legalPhone.value = "13800138000";
+        // New fields
+        form.registerDate.value = "2020-01-01";
+        form.termStart.value = "2020-01-01";
+        form.termEnd.value = "2030-01-01";
+        form.scope.value = "数据处理与存储服务；软件开发；信息系统集成服务。";
+    }
+
+    function saveDraft() {
+        const form = document.getElementById('registerForm');
+        const id = form.id.value ? parseFloat(form.id.value) : null;
+
+        const newData = {
+            id: id || Date.now(),
+            name: form.name.value || "未命名",
+            code: form.code.value || "N/A",
+            role: form.role.value,
+            type: form.type.value,
+            city: form.city.value,
+            status: 'draft',
+            createTime: new Date().toISOString().slice(0, 16).replace('T', ' ')
+        };
+
+        if (id) {
+            // Update existing
+            const index = mainData.findIndex(d => d.id === id);
+            if (index !== -1) {
+                // Preserve original createTime if exists
+                newData.createTime = mainData[index].createTime;
+                mainData[index] = { ...mainData[index], ...newData };
+            }
+        } else {
+            // Create new
+            mainData.unshift(newData);
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+        showToast('已保存草稿', 'success');
+        renderMainTable();
+    }
+
+    function submitRegisterForm() {
+        const form = document.getElementById('registerForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const id = form.id.value ? parseFloat(form.id.value) : null;
+        const newData = {
+            id: id || Date.now(),
+            name: form.name.value,
+            code: form.code.value,
+            role: form.role.value,
+            type: form.type.value,
+            city: form.city.value,
+            status: 'pending',
+            createTime: new Date().toISOString().slice(0, 16).replace('T', ' ')
+        };
+
+        if (id) {
+            // Update existing
+            const index = mainData.findIndex(d => d.id === id);
+            if (index !== -1) {
+                newData.createTime = mainData[index].createTime;
+                mainData[index] = { ...mainData[index], ...newData };
+            }
+        } else {
+            // Create new
+            mainData.unshift(newData);
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+        showToast('已提交审核', 'success');
+        renderMainTable();
+    }
+
+    // --- Record Operations ---
+
+    function deleteRecord(id) {
+        if (confirm('确认删除该备案草稿？删除后不可恢复。')) {
+            mainData = mainData.filter(d => d.id !== id);
+            showToast('删除成功', 'success');
+            renderMainTable();
+        }
+    }
+
+    function submitRecord(id) {
+        const item = mainData.find(d => d.id === id);
+        if (item) {
+            item.status = 'pending';
+            showToast('已提交审核', 'success');
+            renderMainTable();
+        }
+    }
+
+    // --- Utilities ---
+
+    function showToast(message, type) {
+        const toastContainer = document.querySelector('.toast-container');
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    }
+
+</script>
+
+</body>
+</html>
